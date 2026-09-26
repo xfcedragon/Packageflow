@@ -82,28 +82,28 @@ export function ScanPackages() {
   return (
     <div className="page load-page" data-page="scan">
       <header className="load-head">
-        <p className="eyebrow">Loading session</p>
-        <h1>Scan Packages</h1>
+        <div>
+          <p className="eyebrow">Loading session</p>
+          <h1>Scan Packages</h1>
+        </div>
+        <p className="load-fraction" aria-live="polite">
+          <strong>{scanned.length}</strong>
+          <span>/ {total}</span>
+        </p>
       </header>
 
       <div className="load-flow">
-        <section className="load-progress" aria-live="polite">
-          <p className="load-fraction">
-            <strong>{scanned.length}</strong>
-            <span>/ {total}</span>
-          </p>
-          <p className="load-fraction-label">packages scanned</p>
-          <p className="load-meta">
-            <span className={`load-pill is-${session.status}`}>
-              {session.status === "planned"
-                ? "Plan ready"
-                : session.status === "scanning"
-                  ? "Scanning"
-                  : "Empty"}
-            </span>
-            {session.startedAt ? <span>Started {formatWhen(session.startedAt)}</span> : null}
-          </p>
-        </section>
+        <p className="load-meta">
+          <span className={`load-pill is-${session.status}`}>
+            {session.status === "planned"
+              ? "Plan ready"
+              : session.status === "scanning"
+                ? "Scanning"
+                : "Empty"}
+          </span>
+          <span>packages scanned</span>
+          {session.startedAt ? <span>Started {formatWhen(session.startedAt)}</span> : null}
+        </p>
 
         <button type="button" className="btn scan-btn load-scan" onClick={() => setScanOpen(true)}>
           <ScanBarcode size={22} aria-hidden="true" />
@@ -230,10 +230,10 @@ function ScanNotice({ notice }: { notice: Notice }) {
   if (notice.kind === "added") {
     return (
       <div className="load-success" role="status">
-        <p className="load-code">Scanned {notice.tracking}</p>
         <p className="load-ok">
           <Check size={18} aria-hidden="true" /> Package added
         </p>
+        <p className="load-code">{notice.tracking}</p>
         <p>
           {notice.count} / {notice.total} packages scanned
         </p>
