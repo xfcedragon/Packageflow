@@ -1,0 +1,64 @@
+-- PackFlow Snowflake schema.
+-- Run as ACCOUNTADMIN. Do not put passwords, tokens, or private keys in this file.
+-- Create the PACKFLOW_API user yourself and set RSA_PUBLIC_KEY from your public key only.
+
+CREATE WAREHOUSE IF NOT EXISTS PACKFLOW_WH
+  WAREHOUSE_SIZE = 'XSMALL'
+  AUTO_SUSPEND = 60
+  AUTO_RESUME = TRUE
+  INITIALLY_SUSPENDED = TRUE;
+
+CREATE DATABASE IF NOT EXISTS PACKFLOW;
+CREATE SCHEMA IF NOT EXISTS PACKFLOW.PUBLIC;
+
+CREATE ROLE IF NOT EXISTS PACKFLOW_API;
+GRANT USAGE ON WAREHOUSE PACKFLOW_WH TO ROLE PACKFLOW_API;
+GRANT USAGE ON DATABASE PACKFLOW TO ROLE PACKFLOW_API;
+GRANT USAGE ON SCHEMA PACKFLOW.PUBLIC TO ROLE PACKFLOW_API;
+
+CREATE TABLE IF NOT EXISTS PACKFLOW.PUBLIC.PACKAGES (
+  package_id        VARCHAR(8)   NOT NULL,
+  tracking_number   VARCHAR(14)  NOT NULL,
+  recipient         VARCHAR(120) NOT NULL,
+  delivery_address  VARCHAR(256) NOT NULL,
+  stop_number       NUMBER(4,0)  NOT NULL,
+  package_size      VARCHAR(8)   NOT NULL,
+  weight            NUMBER(5,1)  NOT NULL,
+  fragile           BOOLEAN      NOT NULL,
+  van_zone          VARCHAR(1),
+  shelf             VARCHAR(8),
+  slot              NUMBER(4,0),
+  delivery_status   VARCHAR(16)  NOT NULL DEFAULT 'pending',
+  CONSTRAINT pk_packages PRIMARY KEY (package_id),
+  CONSTRAINT uq_packages_tracking UNIQUE (tracking_number)
+);
+
+CREATE TABLE IF NOT EXISTS PACKFLOW.PUBLIC.DELIVERY_STOPS (
+  stop_number  NUMBER(4,0)  NOT NULL,
+  address      VARCHAR(256) NOT NULL,
+  status       VARCHAR(16)  NOT NULL DEFAULT 'pending',
+  CONSTRAINT pk_stops PRIMARY KEY (stop_number)
+);
+
+CREATE TABLE IF NOT EXISTS PACKFLOW.PUBLIC.DELIVERY_EVENTS (
+  event_id         VARCHAR(36)   NOT NULL DEFAULT UUID_STRING(),
+  tracking_number  VARCHAR(14)   NOT NULL,
+  event_type       VARCHAR(32)   NOT NULL,
+  event_timestamp  TIMESTAMP_NTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  CONSTRAINT pk_events PRIMARY KEY (event_id)
+);
+
+GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA PACKFLOW.PUBLIC TO ROLE PACKFLOW_API;
+GRANT SELECT, INSERT, UPDATE ON FUTURE TABLES IN SCHEMA PACKFLOW.PUBLIC TO ROLE PACKFLOW_API;
+
+-- After you generate a key pair locally, run this with the public key body
+-- (base64 between the PEM headers, one line). Keep the private key out of git.
+--
+-- CREATE USER IF NOT EXISTS PACKFLOW_API
+--   TYPE = SERVICE
+--   DEFAULT_ROLE = PACKFLOW_API
+--   DEFAULT_WAREHOUSE = PACKFLOW_WH
+--   DEFAULT_NAMESPACE = PACKFLOW.PUBLIC
+--   RSA_PUBLIC_KEY = '<public key body>';
+--
+-- GRANT ROLE PACKFLOW_API TO USER PACKFLOW_API;

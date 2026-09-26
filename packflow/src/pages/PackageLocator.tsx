@@ -8,9 +8,9 @@ const PackageScanner = lazy(() =>
 import { StatusBadge } from "../components/StatusBadge";
 import { VanView } from "../components/VanView";
 import {
+  driverLocation,
   formatLabel,
   formatWeight,
-  locationLabel,
   matchesQuery,
   nextPending,
 } from "../delivery";
@@ -18,7 +18,7 @@ import { usePackages } from "../package-context";
 import type { Package } from "../types";
 
 export function PackageLocator() {
-  const { packages, planGenerated, markDelivered, selectedId, selectPackage, demoActive } = usePackages();
+  const { packages, markDelivered, selectedId, selectPackage, demoActive } = usePackages();
   const [params, setParams] = useSearchParams();
   const [scanOpen, setScanOpen] = useState(false);
   const query = params.get("q") ?? "";
@@ -113,8 +113,7 @@ export function PackageLocator() {
                     <strong>{pkg.recipient}</strong>
                     <em>{pkg.deliveryAddress}</em>
                     <span className="result-meta">
-                      Stop {pkg.stopNumber}
-                      {pkg.zone ? ` · ${locationLabel(pkg)}` : ""}
+                      Stop {pkg.stopNumber} · {driverLocation(pkg)}
                     </span>
                   </button>
                 </li>
@@ -127,7 +126,6 @@ export function PackageLocator() {
           {selected ? (
             <PackageDetail
               pkg={selected}
-              planGenerated={planGenerated}
               onDelivered={() => markDelivered(selected.id)}
               packages={packages}
             />
@@ -146,12 +144,10 @@ export function PackageLocator() {
 
 function PackageDetail({
   pkg,
-  planGenerated,
   onDelivered,
   packages,
 }: {
   pkg: Package;
-  planGenerated: boolean;
   onDelivered: () => void;
   packages: Package[];
 }) {
@@ -192,7 +188,7 @@ function PackageDetail({
 
       <div className="location-callout">
         <span>Exact van location</span>
-        <strong>{planGenerated ? locationLabel(pkg) : "Not placed yet"}</strong>
+        <strong>{driverLocation(pkg)}</strong>
       </div>
 
       <VanView packages={packages} highlightId={pkg.id} />

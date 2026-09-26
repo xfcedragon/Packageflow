@@ -32,6 +32,11 @@ export function locationLabel(pkg: Package) {
   return `Zone ${pkg.zone} · ${formatLabel(pkg.shelf)} shelf · Slot ${pkg.slot}`;
 }
 
+export function driverLocation(pkg: Package) {
+  if (!pkg.zone || !pkg.shelf || !pkg.slot) return "Not loaded yet";
+  return locationLabel(pkg);
+}
+
 export function matchesQuery(pkg: Package, query: string) {
   const text = query.trim().toLowerCase();
   if (!text) return false;

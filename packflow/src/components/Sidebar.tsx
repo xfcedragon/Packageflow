@@ -1,9 +1,10 @@
-import { Barcode, LayoutDashboard, MapPinned, PackageSearch, Play, Truck } from "lucide-react";
+import { Barcode, LayoutDashboard, MapPinned, PackageSearch, Play, ScanBarcode, Truck } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { usePackages } from "../package-context";
 
 const links = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/scan", label: "Scan Packages", icon: ScanBarcode, end: false },
   { to: "/loading-plan", label: "Loading Plan", icon: Truck, end: false },
   { to: "/locator", label: "Package Locator", icon: PackageSearch, end: false },
   { to: "/labels", label: "Package Labels", icon: Barcode, end: false },
@@ -45,32 +46,6 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="demo-controls">
-        <button
-          type="button"
-          className={demoActive ? "demo-btn is-on" : "demo-btn"}
-          onClick={() => {
-            startDemo();
-            navigate("/");
-          }}
-        >
-          <Play size={16} aria-hidden="true" />
-          Demo Mode
-        </button>
-        {demoActive ? (
-          <button
-            type="button"
-            className="demo-exit"
-            onClick={() => {
-              exitDemo();
-              navigate("/");
-            }}
-          >
-            Exit demo
-          </button>
-        ) : null}
-      </div>
-
       <div className="side-foot">
         <p className="route-chip">
           <MapPinned size={14} aria-hidden="true" />
@@ -85,6 +60,32 @@ export function Sidebar() {
             <span>Fredericton route</span>
           </div>
         </div>
+      </div>
+
+      <div className="demo-controls">
+        <button
+          type="button"
+          className={demoActive ? "demo-btn is-on" : "demo-btn"}
+          onClick={() => {
+            startDemo();
+            navigate("/");
+          }}
+        >
+          <Play size={14} aria-hidden="true" />
+          Demo Mode
+        </button>
+        {demoActive ? (
+          <button
+            type="button"
+            className="demo-exit"
+            onClick={() => {
+              exitDemo();
+              navigate("/");
+            }}
+          >
+            Exit demo
+          </button>
+        ) : null}
       </div>
     </aside>
   );

@@ -5,5 +5,17 @@ dist-ssr/
 .env.*
 !.env.example
 *.local
+*.p8
+*.pem
+*.key
+*.pfx
+*.p12
+rsa_key*
+*_rsa
+*_rsa.pub
+*private-key*
+*private_key*
+secrets.json
+credentials.json
 .DS_Store
 *.log

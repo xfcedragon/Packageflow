@@ -1,9 +1,9 @@
-import { Box, CircleCheck, MapPin, Package, Truck } from "lucide-react";
+import { Box, CircleCheck, Hash, MapPin, Weight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { StatCard } from "../components/StatCard";
 import { VanView } from "../components/VanView";
-import { formatWeight, locationLabel, nextPending } from "../delivery";
+import { formatLabel, formatWeight, locationLabel, nextPending } from "../delivery";
 import { usePackages } from "../package-context";
+import type { Package } from "../types";
 
 export function Dashboard() {
   const { packages, planGenerated, markDelivered, selectedId, demoActive } = usePackages();
@@ -21,26 +21,44 @@ export function Dashboard() {
   const upcoming = new Map<number, { address: string; count: number }>();
   for (const pkg of packages) {
     if (pkg.status === "delivered") continue;
+    if (next && pkg.stopNumber <= next.stopNumber) continue;
     const current = upcoming.get(pkg.stopNumber);
     if (current) current.count += 1;
     else upcoming.set(pkg.stopNumber, { address: pkg.deliveryAddress, count: 1 });
   }
-  const upcomingStops = [...upcoming.entries()].sort((a, b) => a[0] - b[0]).slice(0, 6);
+  const upcomingStops = [...upcoming.entries()].sort((a, b) => a[0] - b[0]);
 
   return (
-    <div className="page" data-page="dashboard">
-      <header className="page-head">
-        <div>
-          <p className="eyebrow">Driver dashboard</p>
-          <h1>Where is the next package?</h1>
-          <p className="lede">Amritansh Singh · Fredericton Delivery Route · Van 14</p>
+    <div className="page dash-page" data-page="dashboard">
+      <section className="dash-status" aria-live="polite">
+        <div className="dash-status-copy">
+          <p>
+            <strong>
+              {delivered} of {total} delivered
+            </strong>
+            <span>Fredericton Delivery Route · Van 14</span>
+          </p>
+          <div
+            className="dash-progress"
+            role="progressbar"
+            aria-valuenow={progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Delivery progress"
+          >
+            <span style={{ width: `${progress}%` }} />
+          </div>
         </div>
+        <p className="dash-remaining">
+          <strong>{remaining}</strong>
+          <span>Remaining</span>
+        </p>
         {!planGenerated ? (
-          <Link className="btn" to="/loading-plan">
+          <Link className="dash-btn dash-btn-ghost" to="/loading-plan">
             Open loading plan
           </Link>
         ) : null}
-      </header>
+      </section>
 
       {demoActive && next ? (
         <div className="demo-banner" role="status">
@@ -54,133 +72,86 @@ export function Dashboard() {
         </div>
       ) : null}
 
-      <section className="stats" aria-live="polite">
-        <StatCard
-          label="Total packages"
-          value={total}
-          hint="Loaded for this route"
-          icon={<Package size={18} />}
-          tone="teal"
-        />
-        <StatCard
-          label="Delivered"
-          value={delivered}
-          hint={delivered === 0 ? "None handed off yet" : "Marked at the door"}
-          icon={<CircleCheck size={18} />}
-          tone="green"
-        />
-        <StatCard
-          label="Remaining"
-          value={remaining}
-          hint={remaining === 0 ? "Van is clear" : "Still in the cargo bay"}
-          icon={<Box size={18} />}
-          tone="amber"
-        />
-        <StatCard
-          label="Progress"
-          value={`${progress}%`}
-          hint={`${delivered} of ${total} packages`}
-          icon={<Truck size={18} />}
-          tone="blue"
-        />
-      </section>
-
-      <section className="card progress-card">
-        <div className="progress-copy">
-          <strong>Delivery progress</strong>
-          <span>
-            {remaining === 0
-              ? "Every package on this route is delivered."
-              : `${remaining} package${remaining === 1 ? "" : "s"} left on the van.`}
-          </span>
-        </div>
-        <div
-          className="progress-track"
-          role="progressbar"
-          aria-valuenow={progress}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Delivery progress"
-        >
-          <span style={{ width: `${progress}%` }} />
-        </div>
-      </section>
-
-      <div className="split">
-        <article className="card next-card">
+      <div className="dash-board">
+        <article className="dash-hero">
           {next ? (
             <>
-              <p className="eyebrow">Next delivery</p>
-              <div className="next-top">
-                <div className="stop-badge">
-                  <span>Stop</span>
-                  <strong>{next.stopNumber}</strong>
-                </div>
-                <div>
-                  <h2>{next.recipient}</h2>
-                  <p className="address">
-                    <MapPin size={16} aria-hidden="true" />
-                    {next.deliveryAddress}
-                  </p>
-                </div>
-              </div>
-              <dl className="facts">
-                <div>
-                  <dt>Tracking</dt>
-                  <dd className="mono">{next.trackingNumber}</dd>
-                </div>
-                <div>
-                  <dt>Package</dt>
-                  <dd>
-                    {next.size} · {formatWeight(next.weight)}
+              <p className="eyebrow">Current delivery · Stop {next.stopNumber}</p>
+              <p className="dash-recipient">{next.recipient}</p>
+              <h1 className="dash-address">{next.deliveryAddress}</h1>
+              <ul className="dash-meta">
+                <li>
+                  <Hash size={18} aria-hidden="true" />
+                  <span>
+                    Tracking <strong className="mono">{next.trackingNumber}</strong>
+                  </span>
+                </li>
+                <li>
+                  <Weight size={18} aria-hidden="true" />
+                  <span>
+                    Weight <strong>{formatWeight(next.weight)}</strong>
+                  </span>
+                </li>
+                <li>
+                  <Box size={18} aria-hidden="true" />
+                  <span>
+                    Size <strong>{formatLabel(next.size)}</strong>
                     {next.fragile ? " · Fragile" : ""}
-                  </dd>
-                </div>
-                <div>
-                  <dt>At this stop</dt>
-                  <dd>
-                    {nextStopCount} package{nextStopCount === 1 ? "" : "s"}
-                  </dd>
-                </div>
-              </dl>
-              <div className="location-callout">
+                  </span>
+                </li>
+              </ul>
+              {nextStopCount > 1 ? (
+                <p className="dash-stop-note">
+                  {nextStopCount} packages at this stop
+                </p>
+              ) : null}
+              <div className="dash-loc">
                 <span>Van location</span>
-                <strong>{planGenerated ? locationLabel(next) : "Not placed yet"}</strong>
+                <strong>{vanBadge(next, planGenerated)}</strong>
               </div>
-              <div className="button-row">
+              <div className="dash-actions">
                 <button
                   type="button"
-                  className="btn"
+                  className="dash-btn dash-btn-done"
                   onClick={() => markDelivered(next.id)}
                 >
-                  Mark delivered
+                  Mark Delivered
                 </button>
+                <a
+                  className="dash-btn dash-btn-nav"
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(next.deliveryAddress)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MapPin size={18} aria-hidden="true" />
+                  Navigate
+                </a>
                 <Link
-                  className="btn secondary"
+                  className="dash-btn dash-btn-ghost"
                   to={`/locator?q=${encodeURIComponent(next.trackingNumber)}`}
                 >
-                  Find in locator
+                  Find in Locator
                 </Link>
               </div>
             </>
           ) : (
             <div className="empty-state">
               <CircleCheck size={28} aria-hidden="true" />
-              <h2>Route complete</h2>
-              <p>All 30 packages are marked delivered. The van is clear.</p>
+              <h1>Route complete</h1>
+              <p>All {total} packages are marked delivered. The van is clear.</p>
             </div>
           )}
         </article>
 
-        <article className="card">
-          <h2>Coming up</h2>
+        <aside className="dash-queue" aria-label="Upcoming queue">
+          <h2>Upcoming</h2>
           {upcomingStops.length === 0 ? (
-            <p className="muted">No stops left on this route.</p>
+            <p className="muted">No stops left after this one.</p>
           ) : (
-            <ol className="stop-list">
+            <ol className="dash-queue-list">
               {upcomingStops.map(([stopNumber, stop]) => (
-                <li key={stopNumber}>
-                  <span className="stop-num">{stopNumber}</span>
+                <li key={stopNumber} className="dash-stop">
+                  <span className="dash-stop-num">{stopNumber}</span>
                   <span>
                     <strong>{stop.address.split(",")[0]}</strong>
                     <em>
@@ -191,7 +162,7 @@ export function Dashboard() {
               ))}
             </ol>
           )}
-        </article>
+        </aside>
       </div>
 
       <section className="card">
@@ -213,4 +184,11 @@ export function Dashboard() {
       </section>
     </div>
   );
+}
+
+function vanBadge(pkg: Package, planGenerated: boolean) {
+  if (pkg.zone && pkg.shelf && pkg.slot != null) {
+    return `Zone ${pkg.zone} • ${formatLabel(pkg.shelf)} • Slot ${pkg.slot}`;
+  }
+  return planGenerated ? "Not loaded yet" : "Not placed yet";
 }

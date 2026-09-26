@@ -94,7 +94,7 @@ export function VanView({ packages, highlightId = null }: VanViewProps) {
               Stop {active.stopNumber}
               {placed && active.zone
                 ? ` · ${locationLabel(active)}`
-                : " · Not placed yet"}
+                : " · Not loaded yet"}
               {active.fragile ? " · Fragile" : ""}
               {` · ${formatLabel(active.size)}`}
             </p>

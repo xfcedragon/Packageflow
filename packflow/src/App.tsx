@@ -4,6 +4,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { LoadingPlan } from "./pages/LoadingPlan";
 import { PackageLabels } from "./pages/PackageLabels";
 import { PackageLocator } from "./pages/PackageLocator";
+import { ScanPackages } from "./pages/ScanPackages";
 import { PackageProvider } from "./state";
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Dashboard />} />
+            <Route path="scan" element={<ScanPackages />} />
             <Route path="loading-plan" element={<LoadingPlan />} />
             <Route path="locator" element={<PackageLocator />} />
             <Route path="labels" element={<PackageLabels />} />
