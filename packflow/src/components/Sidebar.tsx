@@ -3,12 +3,12 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { usePackages } from "../package-context";
 
 const links = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/scan", label: "Scan Packages", icon: ScanBarcode, end: false },
-  { to: "/loading-plan", label: "Loading Plan", icon: Truck, end: false },
-  { to: "/locator", label: "Package Locator", icon: PackageSearch, end: false },
-  { to: "/labels", label: "Package Labels", icon: Barcode, end: false },
-  { to: "/analytics", label: "Route Analytics", icon: BarChart3, end: false },
+  { to: "/", label: "Dashboard", short: "Dash", icon: LayoutDashboard, end: true },
+  { to: "/scan", label: "Scan Packages", short: "Scan", icon: ScanBarcode, end: false },
+  { to: "/loading-plan", label: "Loading Plan", short: "Load", icon: Truck, end: false },
+  { to: "/locator", label: "Package Locator", short: "Locate", icon: PackageSearch, end: false },
+  { to: "/labels", label: "Package Labels", short: "Labels", icon: Barcode, end: false },
+  { to: "/analytics", label: "Route Analytics", short: "Analytics", icon: BarChart3, end: false },
 ];
 
 export function Sidebar() {
@@ -40,9 +40,11 @@ export function Sidebar() {
               className={({ isActive }) =>
                 isActive ? "nav-link active" : "nav-link"
               }
+              title={link.label}
             >
               <Icon size={18} aria-hidden="true" />
-              {link.label}
+              <span className="nav-label-full">{link.label}</span>
+              <span className="nav-label-short">{link.short}</span>
             </NavLink>
           );
         })}

@@ -135,6 +135,10 @@ h2 {
   font-weight: 650;
 }
 
+.nav-label-short {
+  display: none;
+}
+
 .nav-link:hover,
 .nav-link.active {
   background: rgba(255, 255, 255, 0.08);
@@ -1226,7 +1230,10 @@ tbody tr:hover {
   .nav-link,
   .result,
   .scan-btn,
-  .scanner-close {
+  .scanner-close,
+  .search-bar,
+  .load-manual input,
+  .dash-queue-map-link {
     min-height: 48px;
   }
 
@@ -1249,6 +1256,29 @@ tbody tr:hover {
 
   .locator-tools {
     grid-template-columns: 1fr;
+  }
+
+  .rule-list {
+    gap: 6px;
+  }
+
+  .rule-list li {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    border-radius: 12px;
+  }
+
+  .load-head h1 {
+    font-size: 24px;
+  }
+
+  .load-fraction strong {
+    font-size: 34px;
+  }
+
+  .card {
+    padding: 14px;
   }
 
   .table-wrap {
@@ -1420,24 +1450,40 @@ tbody tr:hover {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px 12px;
+    gap: 8px 10px;
     padding: 10px 12px;
+    padding-top: max(10px, env(safe-area-inset-top));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  .brand {
+    padding: 0;
+    min-width: 0;
   }
 
   .side-nav {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
+    gap: 6px;
   }
 
   .side-foot,
-  .brand span {
+  .brand span,
+  .data-note,
+  .nav-label-full {
     display: none;
+  }
+
+  .nav-label-short {
+    display: block;
   }
 
   .demo-controls {
     width: 100%;
     grid-template-columns: 1fr 1fr;
+    gap: 6px;
   }
 
   .demo-banner {
@@ -1445,27 +1491,36 @@ tbody tr:hover {
     align-items: stretch;
   }
 
+  .demo-banner .btn {
+    width: 100%;
+  }
+
   .nav-link {
     flex-direction: column;
     justify-content: center;
     text-align: center;
-    gap: 4px;
-    padding: 8px 4px;
+    gap: 5px;
+    padding: 10px 6px;
     font-size: 12px;
     line-height: 1.15;
+    min-height: 56px;
   }
 
   .page {
-    padding: 18px 16px 36px;
+    padding: 16px 14px max(36px, env(safe-area-inset-bottom));
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
   }
 
   .page-head {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
   }
 
   h1 {
-    font-size: 26px;
+    font-size: 24px;
   }
 }
 
@@ -1478,6 +1533,14 @@ tbody tr:hover {
 
   .progress-copy {
     flex-direction: column;
+  }
+
+  .side-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .demo-controls {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1734,13 +1797,15 @@ tbody tr:hover {
 .dash-queue-map-link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   font-size: 13px;
   font-weight: 650;
   color: #2563eb;
   text-decoration: none;
-  padding: 4px 8px;
-  border-radius: 6px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 8px;
   background: #eff6ff;
   border: 1px solid #bfdbfe;
   flex-shrink: 0;
@@ -1814,6 +1879,23 @@ tbody tr:hover {
 @media (max-width: 720px) {
   .dash-status {
     flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .dash-status-copy {
+    flex: 1 1 100%;
+  }
+
+  .dash-remaining {
+    flex: 1 1 auto;
+  }
+
+  .dash-status-actions {
+    flex: 1 1 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .dash-status .dash-btn {
@@ -1822,10 +1904,26 @@ tbody tr:hover {
 
   .dash-board {
     grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .dash-hero {
+    padding: 16px 14px 16px 12px;
   }
 
   .dash-address {
-    font-size: 24px;
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+
+  .dash-recipient {
+    font-size: 16px;
+  }
+
+  .dash-meta {
+    gap: 8px 12px;
+    font-size: 14px;
   }
 
   .dash-actions {
@@ -1837,7 +1935,22 @@ tbody tr:hover {
   }
 
   .dash-queue {
-    max-height: 320px;
+    max-height: none;
+    padding: 14px;
+  }
+
+  .dash-queue-head {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .dash-queue-map-link {
+    width: 100%;
+  }
+
+  .dash-stop {
+    min-height: 48px;
+    padding: 12px 10px;
   }
 }
 
@@ -2173,8 +2286,14 @@ tbody tr:hover {
     padding: 0;
   }
 
+  .load-manual div {
+    grid-template-columns: 1fr;
+  }
+
   .load-manual button {
-    min-width: 72px;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
   }
 }
 
