@@ -1554,6 +1554,13 @@ tbody tr:hover {
   font-size: 14px;
   font-weight: 700;
 }
+.dash-status-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 
 .dash-board {
   display: grid;
@@ -1711,6 +1718,46 @@ tbody tr:hover {
   margin-bottom: 8px;
   color: #0f172a;
 }
+.dash-queue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dash-queue-head h2 {
+  margin: 0;
+}
+
+.dash-queue-map-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #2563eb;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  flex-shrink: 0;
+}
+
+.dash-queue-map-link:hover {
+  background: #dbeafe;
+}
+
+.dash-btn-route {
+  background: #0f766e;
+  color: white;
+}
+
+.dash-btn-route:hover {
+  background: #115e59;
+}
+
 
 .dash-queue-list {
   overflow-y: auto;

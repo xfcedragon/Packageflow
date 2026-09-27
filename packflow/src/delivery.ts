@@ -49,3 +49,35 @@ export function matchesQuery(pkg: Package, query: string) {
     pkg.recipient.toLowerCase().includes(text)
   );
 }
+
+export function buildFullRouteUrl(packages: Package[], maxWaypoints: number = 9): string | null {
+  const pendingByStop = [...packages]
+    .filter((pkg) => pkg.status !== "delivered")
+    .sort((a, b) => a.stopNumber - b.stopNumber);
+
+  const uniqueAddresses: string[] = [];
+  for (const pkg of pendingByStop) {
+    if (!uniqueAddresses.includes(pkg.deliveryAddress)) {
+      uniqueAddresses.push(pkg.deliveryAddress);
+    }
+  }
+
+  if (uniqueAddresses.length === 0) return null;
+  if (uniqueAddresses.length === 1) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(uniqueAddresses[0])}`;
+  }
+
+  // Google Maps supports origin, destination, and up to 9 intermediate waypoints
+  const stopsToInclude = uniqueAddresses.slice(0, maxWaypoints + 2);
+  const origin = encodeURIComponent(stopsToInclude[0]);
+  const destination = encodeURIComponent(stopsToInclude[stopsToInclude.length - 1]);
+  const intermediate = stopsToInclude
+    .slice(1, -1)
+    .map((addr) => encodeURIComponent(addr))
+    .join("|");
+
+  return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${
+    intermediate ? `&waypoints=${intermediate}` : ""
+  }&travelmode=driving`;
+}
+

@@ -1,7 +1,7 @@
-import { Box, CircleCheck, Hash, MapPin, Weight } from "lucide-react";
+import { Box, CircleCheck, ExternalLink, Hash, MapPin, MapPinned, Route, Weight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { VanView } from "../components/VanView";
-import { formatLabel, formatWeight, locationLabel, nextPending } from "../delivery";
+import { buildFullRouteUrl, formatLabel, formatWeight, locationLabel, nextPending } from "../delivery";
 import { usePackages } from "../package-context";
 import type { Package } from "../types";
 
@@ -27,6 +27,7 @@ export function Dashboard() {
     else upcoming.set(pkg.stopNumber, { address: pkg.deliveryAddress, count: 1 });
   }
   const upcomingStops = [...upcoming.entries()].sort((a, b) => a[0] - b[0]);
+  const fullRouteUrl = buildFullRouteUrl(packages);
 
   return (
     <div className="page dash-page" data-page="dashboard">
@@ -53,11 +54,25 @@ export function Dashboard() {
           <strong>{remaining}</strong>
           <span>Remaining</span>
         </p>
-        {!planGenerated ? (
-          <Link className="dash-btn dash-btn-ghost" to="/loading-plan">
-            Open loading plan
-          </Link>
-        ) : null}
+        <div className="dash-status-actions">
+          {fullRouteUrl ? (
+            <a
+              className="dash-btn dash-btn-route"
+              href={fullRouteUrl}
+              target="_blank"
+              rel="noreferrer"
+              title="Open full delivery route on Google Maps"
+            >
+              <Route size={18} aria-hidden="true" />
+              Full Route
+            </a>
+          ) : null}
+          {!planGenerated ? (
+            <Link className="dash-btn dash-btn-ghost" to="/loading-plan">
+              Open loading plan
+            </Link>
+          ) : null}
+        </div>
       </section>
 
       {demoActive && next ? (
@@ -150,7 +165,22 @@ export function Dashboard() {
         </article>
 
         <aside className="dash-queue" aria-label="Upcoming queue">
-          <h2>Upcoming</h2>
+          <div className="dash-queue-head">
+            <h2>Upcoming</h2>
+            {fullRouteUrl ? (
+              <a
+                className="dash-queue-map-link"
+                href={fullRouteUrl}
+                target="_blank"
+                rel="noreferrer"
+                title="Open all pending stops in Google Maps"
+              >
+                <MapPinned size={14} aria-hidden="true" />
+                Map route
+                <ExternalLink size={12} aria-hidden="true" />
+              </a>
+            ) : null}
+          </div>
           {upcomingStops.length === 0 ? (
             <p className="muted">No stops left after this one.</p>
           ) : (
