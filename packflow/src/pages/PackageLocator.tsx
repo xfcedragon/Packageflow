@@ -1,5 +1,5 @@
 import { MapPin, ScanBarcode, Search } from "lucide-react";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 const PackageScanner = lazy(() =>
@@ -14,6 +14,7 @@ import {
   matchesQuery,
   nextPending,
 } from "../delivery";
+import { recordEvents } from "../lib/analytics-events";
 import { getPackageByTrackingNumber } from "../lib/package-service";
 import { usePackages } from "../package-context";
 import type { Package } from "../types";
@@ -23,6 +24,7 @@ export function PackageLocator() {
     usePackages();
   const [params, setParams] = useSearchParams();
   const [scanOpen, setScanOpen] = useState(false);
+  const retrievedId = useRef<string | null>(null);
   const query = params.get("q") ?? "";
 
   const matches = useMemo(
@@ -37,6 +39,21 @@ export function PackageLocator() {
   const selected = query.trim()
     ? selectedFromSearch
     : packages.find((pkg) => pkg.id === selectedId) ?? fallback;
+
+  useEffect(() => {
+    if (!selected || retrievedId.current === selected.id) return;
+    retrievedId.current = selected.id;
+    recordEvents([
+      {
+        event_type: "package_retrieved",
+        tracking_number: selected.trackingNumber,
+        stop_number: selected.stopNumber,
+        zone: selected.zone,
+        shelf: selected.shelf,
+        slot: selected.slot,
+      },
+    ]);
+  }, [selected]);
 
   useEffect(() => {
     if (!query.trim() || !selectedFromSearch) return;

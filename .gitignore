@@ -19,3 +19,5 @@ secrets.json
 credentials.json
 .DS_Store
 *.log
+.vercel
+.env*

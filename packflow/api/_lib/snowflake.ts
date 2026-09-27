@@ -70,7 +70,9 @@ export class SnowflakeQueryError extends Error {
 
 let cachedToken: { token: string; exp: number; key: string } | null = null;
 
-export function qualifiedTable(name: "PACKAGES" | "DELIVERY_STOPS" | "DELIVERY_EVENTS"): string {
+export function qualifiedTable(
+  name: "PACKAGES" | "DELIVERY_STOPS" | "DELIVERY_EVENTS" | "PACKFLOW_EVENTS",
+): string {
   const database = identifier(envValue("SNOWFLAKE_DATABASE"), "SNOWFLAKE_DATABASE");
   const schema = identifier(envValue("SNOWFLAKE_SCHEMA"), "SNOWFLAKE_SCHEMA");
   return `${database}.${schema}.${name}`;
@@ -130,7 +132,14 @@ function accountHost(): string {
 }
 
 function accountForJwt(account: string): string {
-  return account.toUpperCase().replace(/\./g, "-");
+  // SQL API JWT: locator forms drop region/cloud after the first dot.
+  // Org-account names have no dot and stay intact. .global is not trimmed.
+  let name = account;
+  if (!name.toLowerCase().includes(".global")) {
+    const dot = name.indexOf(".");
+    if (dot > 0) name = name.slice(0, dot);
+  }
+  return name.toUpperCase().replace(/\./g, "-");
 }
 
 function userForJwt(user: string): string {

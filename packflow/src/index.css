@@ -512,6 +512,7 @@ h2 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
 }
 
 .btn:hover {
@@ -2128,4 +2129,29 @@ tbody tr:hover {
   .load-manual button {
     min-width: 72px;
   }
+}
+
+.analytics-note p {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.analytics-types {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.analytics-types li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.analytics-types span {
+  color: var(--muted);
 }

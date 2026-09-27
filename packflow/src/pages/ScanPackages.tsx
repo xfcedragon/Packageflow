@@ -2,6 +2,7 @@ import { Check, ScanBarcode, Trash2 } from "lucide-react";
 import { lazy, Suspense, useMemo, useState, type FormEvent } from "react";
 import { VanView } from "../components/VanView";
 import { driverLocation, formatLabel, formatWeight } from "../delivery";
+import { recordEvents } from "../lib/analytics-events";
 import { getPackageByTrackingNumber } from "../lib/package-service";
 import { usePackages } from "../package-context";
 import { interpretScan } from "../scan";
@@ -56,6 +57,16 @@ export function ScanPackages() {
       setNotice({ kind: "duplicate", tracking: pkg.trackingNumber });
       return;
     }
+    recordEvents([
+      {
+        event_type: "package_scanned",
+        tracking_number: pkg.trackingNumber,
+        stop_number: pkg.stopNumber,
+        zone: pkg.zone,
+        shelf: pkg.shelf,
+        slot: pkg.slot,
+      },
+    ]);
     setNotice({
       kind: "added",
       tracking: pkg.trackingNumber,
