@@ -61,6 +61,17 @@ async function saveLocations(rows: Package[]) {
   );
 }
 
+/** Rebuild the demo route from mock seed data. Prefer Supabase UUIDs matched by tracking number. */
+function rebuildDemoPackages(remote: Package[]): Package[] {
+  const byTracking = new Map(
+    remote.filter((pkg) => isUuid(pkg.id)).map((pkg) => [pkg.trackingNumber, pkg]),
+  );
+  return freshPackages().map((pkg) => {
+    const matched = byTracking.get(pkg.trackingNumber);
+    return asPending(matched ? { ...pkg, id: matched.id } : pkg);
+  });
+}
+
 export function PackageProvider({ children }: { children: ReactNode }) {
   const supabaseReady = supabaseConfigured();
   const [packages, setPackages] = useState<Package[]>(() => freshPackages());
@@ -72,6 +83,8 @@ export function PackageProvider({ children }: { children: ReactNode }) {
   const [sourceDetail, setSourceDetail] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const demoRef = useRef(false);
+  // Load Demo owns local package state until Demo Mode / data-mode switch reloads remote rows.
+  const localDemoResetRef = useRef(false);
   demoRef.current = demoActive;
 
   useEffect(() => {
@@ -80,7 +93,8 @@ export function PackageProvider({ children }: { children: ReactNode }) {
     setSourceDetail("Loading packages from Supabase…");
     getPackages()
       .then((rows) => {
-        if (cancelled || demoRef.current) return;
+        // Skip overwrite while Demo Mode is on, or after Load Demo reset the local route.
+        if (cancelled || demoRef.current || localDemoResetRef.current) return;
         setPackages(rows);
         setPlanGenerated(rows.some((pkg) => pkg.zone && pkg.shelf && pkg.slot != null));
         setSelectedId(null);
@@ -92,7 +106,7 @@ export function PackageProvider({ children }: { children: ReactNode }) {
         );
       })
       .catch((error: unknown) => {
-        if (cancelled || demoRef.current) return;
+        if (cancelled || demoRef.current || localDemoResetRef.current) return;
         setPackages(freshPackages());
         setPlanGenerated(false);
         setDataModeState("local");
@@ -118,6 +132,7 @@ export function PackageProvider({ children }: { children: ReactNode }) {
       supabaseReady,
       sourceDetail,
       setDataMode: (mode) => {
+        localDemoResetRef.current = false;
         setDemoActive(false);
         setSelectedId(null);
         setSession(emptySession);
@@ -215,14 +230,10 @@ export function PackageProvider({ children }: { children: ReactNode }) {
         setPackages((current) => (current.some((item) => item.id === pkg.id) ? current : [...current, pkg]));
       },
       loadDemoSession: () => {
-        // Fresh undelivered route. Keep Supabase UUID rows when connected;
-        // otherwise reload the local 30-package Fredericton mock.
-        // Do NOT apply DEMO_DELIVERED_THROUGH_STOP here — that is startDemo only.
-        const source =
-          dataMode === "supabase" && packages.some((pkg) => isUuid(pkg.id))
-            ? packages
-            : freshPackages();
-        const rows = source.map(asPending);
+        // Fresh undelivered route from mock seed data — never mid-route Demo Mode.
+        // Block in-flight Supabase hydration so stale delivered rows cannot overwrite this reset.
+        localDemoResetRef.current = true;
+        const rows = rebuildDemoPackages(packages);
         setPackages(rows);
         setPlanGenerated(false);
         setDemoActive(false);
@@ -268,6 +279,7 @@ export function PackageProvider({ children }: { children: ReactNode }) {
       },
       selectPackage: (id: string) => setSelectedId(id),
       startDemo: () => {
+        localDemoResetRef.current = true;
         const scenario = assignLocations(freshPackages()).map((pkg) =>
           pkg.stopNumber <= DEMO_DELIVERED_THROUGH_STOP
             ? { ...pkg, status: "delivered" as const }
@@ -285,9 +297,11 @@ export function PackageProvider({ children }: { children: ReactNode }) {
         setSelectedId(null);
         setSession(emptySession);
         if (dataMode === "supabase") {
+          localDemoResetRef.current = false;
           setReloadKey((current) => current + 1);
           return;
         }
+        localDemoResetRef.current = false;
         setPackages(freshPackages());
         setPlanGenerated(false);
       },
