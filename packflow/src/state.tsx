@@ -5,6 +5,7 @@ import { recordEvents, type AnalyticsEvent } from "./lib/analytics-events";
 import {
   getPackages,
   markPackageDelivered,
+  resetPackagesToPending,
   updatePackageLocation,
 } from "./lib/package-service";
 import { supabaseConfigured } from "./lib/supabase";
@@ -22,6 +23,11 @@ function freshPackages(): Package[] {
 
 function withoutLocation(pkg: Package): Package {
   return { ...pkg, zone: null, shelf: null, slot: null };
+}
+
+/** Fresh undelivered package — clears status and van placement. */
+function asPending(pkg: Package): Package {
+  return { ...pkg, status: "pending", zone: null, shelf: null, slot: null };
 }
 
 function isUuid(id: string) {
@@ -123,12 +129,17 @@ export function PackageProvider({ children }: { children: ReactNode }) {
         }
       },
       generatePlan: () => {
-        const placed = assignLocations(packages);
+        // Pre-route: plan from pending packages so Dashboard counts match the plan.
+        const placed = assignLocations(packages.map((pkg) => ({ ...pkg, status: "pending" as const })));
         setPackages(placed);
         setPlanGenerated(true);
         recordEvents(planEvents(placed, "route"));
         if (dataMode !== "supabase" || demoActive) return;
-        void saveLocations(placed).catch((error: unknown) => {
+        void (async () => {
+          const ids = placed.filter((pkg) => isUuid(pkg.id)).map((pkg) => pkg.id);
+          if (ids.length > 0) await resetPackagesToPending(ids);
+          await saveLocations(placed);
+        })().catch((error: unknown) => {
           setSourceDetail(error instanceof Error ? error.message : "Could not save van locations.");
         });
       },
@@ -137,12 +148,20 @@ export function PackageProvider({ children }: { children: ReactNode }) {
           .map((id) => packages.find((pkg) => pkg.id === id))
           .filter((pkg): pkg is Package => pkg != null);
         if (selected.length === 0) return "skipped";
-        const placed = assignLocations(selected);
+        const placed = assignLocations(
+          selected.map((pkg) => ({ ...pkg, status: "pending" as const })),
+        );
         const byId = new Map(placed.map((pkg) => [pkg.id, pkg]));
         const next = packages.map((pkg) => {
           const updated = byId.get(pkg.id);
           if (!updated) return withoutLocation(pkg);
-          return { ...pkg, zone: updated.zone, shelf: updated.shelf, slot: updated.slot };
+          return {
+            ...pkg,
+            status: "pending" as const,
+            zone: updated.zone,
+            shelf: updated.shelf,
+            slot: updated.slot,
+          };
         });
         setPackages(next);
         setPlanGenerated(true);
@@ -152,6 +171,8 @@ export function PackageProvider({ children }: { children: ReactNode }) {
           return "skipped";
         }
         try {
+          const ids = placed.filter((pkg) => isUuid(pkg.id)).map((pkg) => pkg.id);
+          if (ids.length > 0) await resetPackagesToPending(ids);
           await saveLocations(next);
           return "sent";
         } catch (error: unknown) {
@@ -194,11 +215,31 @@ export function PackageProvider({ children }: { children: ReactNode }) {
         setPackages((current) => (current.some((item) => item.id === pkg.id) ? current : [...current, pkg]));
       },
       loadDemoSession: () => {
+        // Fresh undelivered route. Keep Supabase UUID rows when connected;
+        // otherwise reload the local 30-package Fredericton mock.
+        // Do NOT apply DEMO_DELIVERED_THROUGH_STOP here — that is startDemo only.
+        const source =
+          dataMode === "supabase" && packages.some((pkg) => isUuid(pkg.id))
+            ? packages
+            : freshPackages();
+        const rows = source.map(asPending);
+        setPackages(rows);
+        setPlanGenerated(false);
+        setDemoActive(false);
+        setSelectedId(null);
+        setSourceDetail(null);
         setSession({
-          ids: packages.map((pkg) => pkg.id),
+          ids: rows.map((pkg) => pkg.id),
           startedAt: new Date().toISOString(),
           status: "scanning",
         });
+        if (dataMode === "supabase" && rows.some((pkg) => isUuid(pkg.id))) {
+          void resetPackagesToPending(rows.map((pkg) => pkg.id)).catch((error: unknown) => {
+            setSourceDetail(
+              error instanceof Error ? error.message : "Could not reset packages in Supabase.",
+            );
+          });
+        }
       },
       markDelivered: (id: string) => {
         const current = packages.find((pkg) => pkg.id === id);

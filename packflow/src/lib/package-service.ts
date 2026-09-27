@@ -137,6 +137,22 @@ export async function createDeliveryEvent(trackingNumber: string, eventType: str
   fail(error, "Could not record delivery event");
 }
 
+/** Reset listed packages to undelivered and clear van slots. Does not delete delivery/analytics events. */
+export async function resetPackagesToPending(ids: string[]): Promise<void> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (unique.length === 0) return;
+  const { error } = await db()
+    .from("packages")
+    .update({
+      delivery_status: "pending",
+      van_zone: null,
+      shelf: null,
+      slot: null,
+    })
+    .in("id", unique);
+  fail(error, "Could not reset packages for a new route");
+}
+
 function toPackage(row: PackageRow): Package {
   return {
     id: row.id,
