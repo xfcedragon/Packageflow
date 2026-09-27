@@ -1,10 +1,10 @@
-import { mockPackages } from "../../src/mockPackages";
-import type { Package } from "../../src/types";
-import { HttpError } from "./http";
-import { stopsFromMock } from "./mock-seed";
-import { mapPackageRow } from "./packages";
-import type { SqlRow } from "./snowflake";
-import { getSupabase, isUniqueViolation, raiseSupabase } from "./supabase";
+import { mockPackages } from "../../src/mockPackages.js";
+import type { Package } from "../../src/types.js";
+import { HttpError } from "./http.js";
+import { stopsFromMock } from "./mock-seed.js";
+import { mapPackageRow } from "./packages.js";
+import type { SqlRow } from "./snowflake.js";
+import { getSupabase, isUniqueViolation, raiseSupabase } from "./supabase.js";
 
 const PACKAGE_COLUMNS =
   "package_id, tracking_number, recipient, delivery_address, stop_number, package_size, weight, fragile, van_zone, shelf, slot, delivery_status";

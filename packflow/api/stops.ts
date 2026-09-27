@@ -1,7 +1,7 @@
-import { activeBackend } from "./_lib/backend";
-import { createHandler } from "./_lib/http";
-import { execute, qualifiedTable, SnowflakeQueryError } from "./_lib/snowflake";
-import { listSupabaseStops } from "./_lib/supabase-store";
+import { activeBackend } from "./_lib/backend.js";
+import { createHandler } from "./_lib/http.js";
+import { execute, qualifiedTable, SnowflakeQueryError } from "./_lib/snowflake.js";
+import { listSupabaseStops } from "./_lib/supabase-store.js";
 
 type Stop = {
   stopNumber: number;

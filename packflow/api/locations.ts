@@ -1,9 +1,9 @@
-import { assignLocations } from "../src/loading";
-import { activeBackend } from "./_lib/backend";
-import { createHandler, HttpError } from "./_lib/http";
-import { listPackages } from "./_lib/packages";
-import { execute, qualifiedTable } from "./_lib/snowflake";
-import { listSupabasePackages, updateSupabaseLocations } from "./_lib/supabase-store";
+import { assignLocations } from "../src/loading.js";
+import { activeBackend } from "./_lib/backend.js";
+import { createHandler, HttpError } from "./_lib/http.js";
+import { listPackages } from "./_lib/packages.js";
+import { execute, qualifiedTable } from "./_lib/snowflake.js";
+import { listSupabasePackages, updateSupabaseLocations } from "./_lib/supabase-store.js";
 
 type Placement = {
   id: string;

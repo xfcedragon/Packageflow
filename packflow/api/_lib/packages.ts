@@ -1,5 +1,5 @@
-import type { DeliveryStatus, Package, PackageSize, Shelf, VanZone } from "../../src/types";
-import { execute, qualifiedTable, SnowflakeQueryError, type SqlRow } from "./snowflake";
+import type { DeliveryStatus, Package, PackageSize, Shelf, VanZone } from "../../src/types.js";
+import { execute, qualifiedTable, SnowflakeQueryError, type SqlRow } from "./snowflake.js";
 
 export const PACKAGE_SELECT = `
   package_id,

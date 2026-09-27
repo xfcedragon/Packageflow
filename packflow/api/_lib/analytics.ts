@@ -1,5 +1,5 @@
-import { HttpError } from "./http";
-import { execute, qualifiedTable, snowflakeEnvStatus, type SqlValue } from "./snowflake";
+import { HttpError } from "./http.js";
+import { execute, qualifiedTable, snowflakeEnvStatus, type SqlValue } from "./snowflake.js";
 
 export const ANALYTICS_EVENT_TYPES = [
   "package_scanned",

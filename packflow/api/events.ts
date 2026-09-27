@@ -1,5 +1,5 @@
-import { insertAnalyticsEvents, readAnalyticsEvents, snowflakeConfigured } from "./_lib/analytics";
-import { createHandler, readObject } from "./_lib/http";
+import { insertAnalyticsEvents, readAnalyticsEvents, snowflakeConfigured } from "./_lib/analytics.js";
+import { createHandler, readObject } from "./_lib/http.js";
 
 export default createHandler("POST", async (req) => {
   const events = readAnalyticsEvents(readObject(req));

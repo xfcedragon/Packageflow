@@ -1,5 +1,5 @@
-import { queryAnalytics, snowflakeConfigured } from "./_lib/analytics";
-import { createHandler } from "./_lib/http";
+import { queryAnalytics, snowflakeConfigured } from "./_lib/analytics.js";
+import { createHandler } from "./_lib/http.js";
 
 export default createHandler("GET", async () => {
   if (!snowflakeConfigured()) {

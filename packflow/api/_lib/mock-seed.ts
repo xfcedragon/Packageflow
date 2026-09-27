@@ -1,5 +1,5 @@
-import { mockPackages } from "../../src/mockPackages";
-import { HttpError } from "./http";
+import { mockPackages } from "../../src/mockPackages.js";
+import { HttpError } from "./http.js";
 
 export type StopSeed = {
   stopNumber: number;
