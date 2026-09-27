@@ -1,8 +1,8 @@
-import { activeBackend } from "./_lib/backend";
-import { createHandler, HttpError, readObject, textField } from "./_lib/http";
-import { packageById, packageByTracking } from "./_lib/packages";
-import { execute, qualifiedTable } from "./_lib/snowflake";
-import { deliverSupabasePackage, findSupabasePackage } from "./_lib/supabase-store";
+import { activeBackend } from "./_lib/backend.js";
+import { createHandler, HttpError, readObject, textField } from "./_lib/http.js";
+import { packageById, packageByTracking } from "./_lib/packages.js";
+import { execute, qualifiedTable } from "./_lib/snowflake.js";
+import { deliverSupabasePackage, findSupabasePackage } from "./_lib/supabase-store.js";
 
 export default createHandler("POST", async (req) => {
   const body = readObject(req);

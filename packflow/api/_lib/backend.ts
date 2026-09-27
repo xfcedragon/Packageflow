@@ -1,5 +1,5 @@
-import { HttpError } from "./http";
-import { snowflakeEnvStatus } from "./snowflake";
+import { HttpError } from "./http.js";
+import { snowflakeEnvStatus } from "./snowflake.js";
 
 const SUPABASE_ENV = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"] as const;
 

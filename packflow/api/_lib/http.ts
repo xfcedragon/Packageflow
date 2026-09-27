@@ -1,4 +1,4 @@
-import { SnowflakeAuthError, SnowflakeConfigError, SnowflakeQueryError } from "./snowflake";
+import { SnowflakeAuthError, SnowflakeConfigError, SnowflakeQueryError } from "./snowflake.js";
 
 export type ApiQuery = Record<string, string | string[] | undefined>;
 

@@ -1,9 +1,9 @@
-import { mockPackages } from "../src/mockPackages";
-import { activeBackend } from "./_lib/backend";
-import { createHandler } from "./_lib/http";
-import { stopsFromMock, type StopSeed } from "./_lib/mock-seed";
-import { execute, qualifiedTable, type SqlValue } from "./_lib/snowflake";
-import { seedSupabase } from "./_lib/supabase-store";
+import { mockPackages } from "../src/mockPackages.js";
+import { activeBackend } from "./_lib/backend.js";
+import { createHandler } from "./_lib/http.js";
+import { stopsFromMock, type StopSeed } from "./_lib/mock-seed.js";
+import { execute, qualifiedTable, type SqlValue } from "./_lib/snowflake.js";
+import { seedSupabase } from "./_lib/supabase-store.js";
 
 export default createHandler("POST", async () => {
   if (activeBackend() === "supabase") return seedSupabase();

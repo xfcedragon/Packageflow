@@ -1,7 +1,7 @@
-import { activeBackend } from "../_lib/backend";
-import { createHandler, HttpError, queryValue, type ApiRequest } from "../_lib/http";
-import { packageByTracking } from "../_lib/packages";
-import { supabasePackageByTracking } from "../_lib/supabase-store";
+import { activeBackend } from "../_lib/backend.js";
+import { createHandler, HttpError, queryValue, type ApiRequest } from "../_lib/http.js";
+import { packageByTracking } from "../_lib/packages.js";
+import { supabasePackageByTracking } from "../_lib/supabase-store.js";
 
 export default createHandler("GET", async (req) => {
   const trackingNumber = trackingFromRequest(req);

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { nextPending } from "./delivery";
 import { assignLocations } from "./loading";
+import { recordEvents, type AnalyticsEvent } from "./lib/analytics-events";
 import {
   getPackages,
   markPackageDelivered,
@@ -25,6 +26,24 @@ function withoutLocation(pkg: Package): Package {
 
 function isUuid(id: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+}
+
+function planEvents(rows: Package[], source: "route" | "session"): AnalyticsEvent[] {
+  const assigned = rows.filter((pkg) => pkg.zone && pkg.shelf && pkg.slot != null);
+  return [
+    {
+      event_type: "loading_plan_generated",
+      payload: { package_count: assigned.length, source },
+    },
+    ...assigned.map((pkg) => ({
+      event_type: "package_assigned" as const,
+      tracking_number: pkg.trackingNumber,
+      stop_number: pkg.stopNumber,
+      zone: pkg.zone,
+      shelf: pkg.shelf,
+      slot: pkg.slot,
+    })),
+  ];
 }
 
 async function saveLocations(rows: Package[]) {
@@ -107,6 +126,7 @@ export function PackageProvider({ children }: { children: ReactNode }) {
         const placed = assignLocations(packages);
         setPackages(placed);
         setPlanGenerated(true);
+        recordEvents(planEvents(placed, "route"));
         if (dataMode !== "supabase" || demoActive) return;
         void saveLocations(placed).catch((error: unknown) => {
           setSourceDetail(error instanceof Error ? error.message : "Could not save van locations.");
@@ -127,6 +147,7 @@ export function PackageProvider({ children }: { children: ReactNode }) {
         setPackages(next);
         setPlanGenerated(true);
         setSession((current) => ({ ...current, status: "planned" }));
+        recordEvents(planEvents(placed, "session"));
         if (dataMode !== "supabase" || demoActive || !next.some((pkg) => isUuid(pkg.id))) {
           return "skipped";
         }
@@ -185,6 +206,18 @@ export function PackageProvider({ children }: { children: ReactNode }) {
           rows.map((pkg) => (pkg.id === id ? { ...pkg, status: "delivered" } : pkg)),
         );
         setSelectedId((selected) => (selected === id ? null : selected));
+        if (current) {
+          recordEvents([
+            {
+              event_type: "package_delivered",
+              tracking_number: current.trackingNumber,
+              stop_number: current.stopNumber,
+              zone: current.zone,
+              shelf: current.shelf,
+              slot: current.slot,
+            },
+          ]);
+        }
         if (!current || dataMode !== "supabase" || demoActive || !isUuid(current.id)) return;
         void markPackageDelivered(current).catch((error: unknown) => {
           setSourceDetail(

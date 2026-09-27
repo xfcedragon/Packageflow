@@ -1,4 +1,4 @@
-import { Barcode, LayoutDashboard, MapPinned, PackageSearch, Play, ScanBarcode, Truck } from "lucide-react";
+import { BarChart3, Barcode, LayoutDashboard, MapPinned, PackageSearch, Play, ScanBarcode, Truck } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { usePackages } from "../package-context";
 
@@ -8,6 +8,7 @@ const links = [
   { to: "/loading-plan", label: "Loading Plan", icon: Truck, end: false },
   { to: "/locator", label: "Package Locator", icon: PackageSearch, end: false },
   { to: "/labels", label: "Package Labels", icon: Barcode, end: false },
+  { to: "/analytics", label: "Route Analytics", icon: BarChart3, end: false },
 ];
 
 export function Sidebar() {
