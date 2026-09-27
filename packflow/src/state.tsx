@@ -1,9 +1,14 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { nextPending } from "./delivery";
 import { assignLocations } from "./loading";
+import {
+  getPackages,
+  markPackageDelivered,
+  updatePackageLocation,
+} from "./lib/package-service";
+import { supabaseConfigured } from "./lib/supabase";
 import { mockPackages } from "./mockPackages";
-import { PackageContext, type LoadSession, type PackageStore } from "./package-context";
-import { publishSessionLocations } from "./publish-locations";
+import { PackageContext, type DataMode, type LoadSession, type PackageStore } from "./package-context";
 import type { Package } from "./types";
 
 const DEMO_DELIVERED_THROUGH_STOP = 8;
@@ -18,14 +23,64 @@ function withoutLocation(pkg: Package): Package {
   return { ...pkg, zone: null, shelf: null, slot: null };
 }
 
-export function PackageProvider({ children }: { children: ReactNode }) {
-  const [packages, setPackages] = useState<Package[]>(() =>
-    mockPackages.map((pkg) => ({ ...pkg })),
+function isUuid(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+}
+
+async function saveLocations(rows: Package[]) {
+  const stored = rows.filter((pkg) => isUuid(pkg.id));
+  await Promise.all(
+    stored.map((pkg) =>
+      updatePackageLocation(pkg.id, { zone: pkg.zone, shelf: pkg.shelf, slot: pkg.slot }),
+    ),
   );
+}
+
+export function PackageProvider({ children }: { children: ReactNode }) {
+  const supabaseReady = supabaseConfigured();
+  const [packages, setPackages] = useState<Package[]>(() => freshPackages());
   const [planGenerated, setPlanGenerated] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [demoActive, setDemoActive] = useState(false);
   const [session, setSession] = useState<LoadSession>(emptySession);
+  const [dataMode, setDataModeState] = useState<DataMode>(supabaseReady ? "supabase" : "local");
+  const [sourceDetail, setSourceDetail] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const demoRef = useRef(false);
+  demoRef.current = demoActive;
+
+  useEffect(() => {
+    if (dataMode !== "supabase") return;
+    let cancelled = false;
+    setSourceDetail("Loading packages from Supabase…");
+    getPackages()
+      .then((rows) => {
+        if (cancelled || demoRef.current) return;
+        setPackages(rows);
+        setPlanGenerated(rows.some((pkg) => pkg.zone && pkg.shelf && pkg.slot != null));
+        setSelectedId(null);
+        setSession(emptySession);
+        setSourceDetail(
+          rows.length === 0
+            ? "Supabase is connected. Run supabase/seed.sql to load the 30 packages."
+            : null,
+        );
+      })
+      .catch((error: unknown) => {
+        if (cancelled || demoRef.current) return;
+        setPackages(freshPackages());
+        setPlanGenerated(false);
+        setDataModeState("local");
+        setSourceDetail(
+          error instanceof Error
+            ? `${error.message} Showing the local Fredericton demo.`
+            : "Could not reach Supabase. Showing the local Fredericton demo.",
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dataMode, reloadKey]);
 
   const value = useMemo<PackageStore>(
     () => ({
@@ -34,9 +89,28 @@ export function PackageProvider({ children }: { children: ReactNode }) {
       selectedId,
       demoActive,
       session,
+      dataMode,
+      supabaseReady,
+      sourceDetail,
+      setDataMode: (mode) => {
+        setDemoActive(false);
+        setSelectedId(null);
+        setSession(emptySession);
+        setDataModeState(mode);
+        if (mode === "local") {
+          setPackages(freshPackages());
+          setPlanGenerated(false);
+          setSourceDetail(null);
+        }
+      },
       generatePlan: () => {
-        setPackages((current) => assignLocations(current));
+        const placed = assignLocations(packages);
+        setPackages(placed);
         setPlanGenerated(true);
+        if (dataMode !== "supabase" || demoActive) return;
+        void saveLocations(placed).catch((error: unknown) => {
+          setSourceDetail(error instanceof Error ? error.message : "Could not save van locations.");
+        });
       },
       generateSessionPlan: async () => {
         const selected = session.ids
@@ -45,16 +119,24 @@ export function PackageProvider({ children }: { children: ReactNode }) {
         if (selected.length === 0) return "skipped";
         const placed = assignLocations(selected);
         const byId = new Map(placed.map((pkg) => [pkg.id, pkg]));
-        setPackages((current) =>
-          current.map((pkg) => {
-            const next = byId.get(pkg.id);
-            if (!next) return withoutLocation(pkg);
-            return { ...pkg, zone: next.zone, shelf: next.shelf, slot: next.slot };
-          }),
-        );
+        const next = packages.map((pkg) => {
+          const updated = byId.get(pkg.id);
+          if (!updated) return withoutLocation(pkg);
+          return { ...pkg, zone: updated.zone, shelf: updated.shelf, slot: updated.slot };
+        });
+        setPackages(next);
         setPlanGenerated(true);
         setSession((current) => ({ ...current, status: "planned" }));
-        return publishSessionLocations(placed);
+        if (dataMode !== "supabase" || demoActive || !next.some((pkg) => isUuid(pkg.id))) {
+          return "skipped";
+        }
+        try {
+          await saveLocations(next);
+          return "sent";
+        } catch (error: unknown) {
+          setSourceDetail(error instanceof Error ? error.message : "Could not save van locations.");
+          return "failed";
+        }
       },
       addToSession: (id: string) => {
         if (session.ids.includes(id)) return "duplicate";
@@ -87,6 +169,9 @@ export function PackageProvider({ children }: { children: ReactNode }) {
         );
         setPlanGenerated(stillPlaced);
       },
+      includePackage: (pkg: Package) => {
+        setPackages((current) => (current.some((item) => item.id === pkg.id) ? current : [...current, pkg]));
+      },
       loadDemoSession: () => {
         setSession({
           ids: packages.map((pkg) => pkg.id),
@@ -95,12 +180,17 @@ export function PackageProvider({ children }: { children: ReactNode }) {
         });
       },
       markDelivered: (id: string) => {
-        setPackages((current) =>
-          current.map((pkg) =>
-            pkg.id === id ? { ...pkg, status: "delivered" } : pkg,
-          ),
+        const current = packages.find((pkg) => pkg.id === id);
+        setPackages((rows) =>
+          rows.map((pkg) => (pkg.id === id ? { ...pkg, status: "delivered" } : pkg)),
         );
-        setSelectedId((current) => (current === id ? null : current));
+        setSelectedId((selected) => (selected === id ? null : selected));
+        if (!current || dataMode !== "supabase" || demoActive || !isUuid(current.id)) return;
+        void markPackageDelivered(current).catch((error: unknown) => {
+          setSourceDetail(
+            error instanceof Error ? error.message : "Could not save the delivery.",
+          );
+        });
       },
       selectPackage: (id: string) => setSelectedId(id),
       startDemo: () => {
@@ -112,21 +202,24 @@ export function PackageProvider({ children }: { children: ReactNode }) {
         setPackages(scenario);
         setPlanGenerated(true);
         setDemoActive(true);
+        setSourceDetail(null);
         setSelectedId(nextPending(scenario)?.id ?? null);
         setSession(emptySession);
       },
       exitDemo: () => {
+        setDemoActive(false);
+        setSelectedId(null);
+        setSession(emptySession);
+        if (dataMode === "supabase") {
+          setReloadKey((current) => current + 1);
+          return;
+        }
         setPackages(freshPackages());
         setPlanGenerated(false);
-        setSelectedId(null);
-        setDemoActive(false);
-        setSession(emptySession);
       },
     }),
-    [packages, planGenerated, selectedId, demoActive, session],
+    [packages, planGenerated, selectedId, demoActive, session, dataMode, supabaseReady, sourceDetail],
   );
 
-  return (
-    <PackageContext.Provider value={value}>{children}</PackageContext.Provider>
-  );
+  return <PackageContext.Provider value={value}>{children}</PackageContext.Provider>;
 }

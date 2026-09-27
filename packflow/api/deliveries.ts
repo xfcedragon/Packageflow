@@ -1,6 +1,8 @@
+import { activeBackend } from "./_lib/backend";
 import { createHandler, HttpError, readObject, textField } from "./_lib/http";
 import { packageById, packageByTracking } from "./_lib/packages";
 import { execute, qualifiedTable } from "./_lib/snowflake";
+import { deliverSupabasePackage, findSupabasePackage } from "./_lib/supabase-store";
 
 export default createHandler("POST", async (req) => {
   const body = readObject(req);
@@ -8,6 +10,12 @@ export default createHandler("POST", async (req) => {
   const trackingNumber = textField(body, "trackingNumber", "tracking_number");
   if (!id && !trackingNumber) {
     throw new HttpError(400, "Provide id or trackingNumber");
+  }
+
+  if (activeBackend() === "supabase") {
+    const pkg = await findSupabasePackage(id, trackingNumber);
+    if (!pkg) throw new HttpError(404, "Package not found");
+    return deliverSupabasePackage(pkg);
   }
 
   const pkg = await findPackage(id, trackingNumber);

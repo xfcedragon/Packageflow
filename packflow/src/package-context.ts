@@ -1,6 +1,9 @@
 import { createContext, useContext } from "react";
-import type { PublishResult } from "./publish-locations";
 import type { Package } from "./types";
+
+export type DataMode = "local" | "supabase";
+
+export type PublishResult = "skipped" | "sent" | "failed";
 
 export type LoadSessionStatus = "empty" | "scanning" | "planned";
 
@@ -16,11 +19,16 @@ export type PackageStore = {
   selectedId: string | null;
   demoActive: boolean;
   session: LoadSession;
+  dataMode: DataMode;
+  supabaseReady: boolean;
+  sourceDetail: string | null;
+  setDataMode: (mode: DataMode) => void;
   generatePlan: () => void;
   generateSessionPlan: () => Promise<PublishResult>;
   addToSession: (id: string) => "added" | "duplicate";
   removeFromSession: (id: string) => void;
   clearSession: () => void;
+  includePackage: (pkg: Package) => void;
   loadDemoSession: () => void;
   markDelivered: (id: string) => void;
   selectPackage: (id: string) => void;

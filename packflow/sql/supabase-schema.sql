@@ -1,0 +1,3 @@
+-- Not the active schema.
+-- Use supabase/schema.sql and supabase/seed.sql.
+-- The browser uses the publishable key. Do not use a service-role key in the frontend.

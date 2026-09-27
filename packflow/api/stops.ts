@@ -1,5 +1,7 @@
+import { activeBackend } from "./_lib/backend";
 import { createHandler } from "./_lib/http";
 import { execute, qualifiedTable, SnowflakeQueryError } from "./_lib/snowflake";
+import { listSupabaseStops } from "./_lib/supabase-store";
 
 type Stop = {
   stopNumber: number;
@@ -8,6 +10,7 @@ type Stop = {
 };
 
 export default createHandler("GET", async () => {
+  if (activeBackend() === "supabase") return listSupabaseStops();
   const rows = await execute(
     `SELECT stop_number, address, status
      FROM ${qualifiedTable("DELIVERY_STOPS")}

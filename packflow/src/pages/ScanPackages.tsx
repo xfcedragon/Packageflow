@@ -2,6 +2,7 @@ import { Check, ScanBarcode, Trash2 } from "lucide-react";
 import { lazy, Suspense, useMemo, useState, type FormEvent } from "react";
 import { VanView } from "../components/VanView";
 import { driverLocation, formatLabel, formatWeight } from "../delivery";
+import { getPackageByTrackingNumber } from "../lib/package-service";
 import { usePackages } from "../package-context";
 import { interpretScan } from "../scan";
 import type { Package, Shelf, VanZone } from "../types";
@@ -30,6 +31,8 @@ export function ScanPackages() {
     generateSessionPlan,
     selectPackage,
     selectedId,
+    dataMode,
+    includePackage,
   } = usePackages();
   const [scanOpen, setScanOpen] = useState(false);
   const [manual, setManual] = useState("");
@@ -61,15 +64,33 @@ export function ScanPackages() {
     });
   }
 
-  function addManual(event: FormEvent) {
+  async function resolveMissing(code: string) {
+    if (dataMode !== "supabase") return null;
+    try {
+      const pkg = await getPackageByTrackingNumber(code);
+      if (pkg) includePackage(pkg);
+      return pkg;
+    } catch {
+      return null;
+    }
+  }
+
+  async function addManual(event: FormEvent) {
     event.preventDefault();
-    const result = interpretScan(packages, manual);
-    if (result.status !== "found") {
-      setNotice({ kind: "missing", tracking: manual.trim() });
+    const typed = manual.trim();
+    const result = interpretScan(packages, typed);
+    if (result.status === "found") {
+      setManual("");
+      accept(result.pkg);
       return;
     }
-    setManual("");
-    accept(result.pkg);
+    const remote = await resolveMissing(typed);
+    if (remote) {
+      setManual("");
+      accept(remote);
+      return;
+    }
+    setNotice({ kind: "missing", tracking: typed });
   }
 
   async function onGenerate() {
@@ -215,8 +236,10 @@ export function ScanPackages() {
           <PackageScanner
             packages={packages}
             onClose={() => setScanOpen(false)}
+            resolveMissing={resolveMissing}
             onFound={(pkg) => {
               setScanOpen(false);
+              includePackage(pkg);
               accept(pkg);
             }}
           />

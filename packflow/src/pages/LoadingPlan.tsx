@@ -83,7 +83,9 @@ export function LoadingPlan() {
         <div className="section-head">
           <div>
             <h2>All packages</h2>
-            <p className="muted">{rows.length} packages across 20 stops</p>
+            <p className="muted">
+              {rows.length} packages across {new Set(rows.map((pkg) => pkg.stopNumber)).size} stops
+            </p>
           </div>
         </div>
         <div className="table-wrap">

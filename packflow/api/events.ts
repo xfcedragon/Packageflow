@@ -1,6 +1,8 @@
+import { activeBackend } from "./_lib/backend";
 import { createHandler, HttpError, readObject, textField } from "./_lib/http";
 import { packageByTracking } from "./_lib/packages";
 import { execute, qualifiedTable } from "./_lib/snowflake";
+import { insertSupabaseEvent, supabasePackageByTracking } from "./_lib/supabase-store";
 
 const EVENT_TYPE = /^[A-Za-z0-9_-]{1,32}$/;
 
@@ -13,6 +15,12 @@ export default createHandler("POST", async (req) => {
   }
   if (!EVENT_TYPE.test(eventType)) {
     throw new HttpError(400, "event_type must be 1-32 letters, numbers, underscores, or hyphens");
+  }
+
+  if (activeBackend() === "supabase") {
+    const pkg = await supabasePackageByTracking(trackingNumber);
+    if (!pkg) throw new HttpError(404, "Package not found");
+    return insertSupabaseEvent(pkg.trackingNumber, eventType);
   }
 
   const pkg = await packageByTracking(trackingNumber);

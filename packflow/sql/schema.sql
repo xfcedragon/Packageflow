@@ -1,4 +1,5 @@
--- PackFlow Snowflake schema.
+-- Unused. PackFlow does not use Snowflake.
+-- Active database setup: supabase/schema.sql and supabase/seed.sql.
 -- Run as ACCOUNTADMIN. Do not put passwords, tokens, or private keys in this file.
 -- Create the PACKFLOW_API user yourself and set RSA_PUBLIC_KEY from your public key only.
 

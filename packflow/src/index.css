@@ -146,6 +146,13 @@ h2 {
   gap: 8px;
 }
 
+.data-note {
+  margin: 0;
+  color: #c5d0de;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .demo-btn,
 .demo-exit {
   display: flex;

@@ -1,10 +1,15 @@
+import { activeBackend } from "../_lib/backend";
 import { createHandler, HttpError, queryValue, type ApiRequest } from "../_lib/http";
 import { packageByTracking } from "../_lib/packages";
+import { supabasePackageByTracking } from "../_lib/supabase-store";
 
 export default createHandler("GET", async (req) => {
   const trackingNumber = trackingFromRequest(req);
   if (!trackingNumber) throw new HttpError(400, "Tracking number is required");
-  const pkg = await packageByTracking(trackingNumber);
+  const pkg =
+    activeBackend() === "supabase"
+      ? await supabasePackageByTracking(trackingNumber)
+      : await packageByTracking(trackingNumber);
   if (!pkg) throw new HttpError(404, "Package not found");
   return pkg;
 });

@@ -134,6 +134,12 @@ export function Dashboard() {
                 </Link>
               </div>
             </>
+          ) : total === 0 ? (
+            <div className="empty-state">
+              <CircleCheck size={28} aria-hidden="true" />
+              <h1>No packages loaded</h1>
+              <p>Run the Supabase seed, or switch to the local Fredericton demo.</p>
+            </div>
           ) : (
             <div className="empty-state">
               <CircleCheck size={28} aria-hidden="true" />

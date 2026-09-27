@@ -36,20 +36,23 @@ type PackageScannerProps = {
   packages: Package[];
   onClose: () => void;
   onFound: (pkg: Package) => void;
+  resolveMissing?: (code: string) => Promise<Package | null>;
 };
 
-export function PackageScanner({ packages, onClose, onFound }: PackageScannerProps) {
+export function PackageScanner({ packages, onClose, onFound, resolveMissing }: PackageScannerProps) {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const packagesRef = useRef(packages);
   const onFoundRef = useRef(onFound);
   const onCloseRef = useRef(onClose);
+  const resolveRef = useRef(resolveMissing);
 
   useEffect(() => {
     packagesRef.current = packages;
     onFoundRef.current = onFound;
     onCloseRef.current = onClose;
+    resolveRef.current = resolveMissing;
   });
 
   useEffect(() => {
@@ -72,6 +75,16 @@ export function PackageScanner({ packages, onClose, onFound }: PackageScannerPro
         return;
       }
       if (result.status === "not-found") {
+        try {
+          const resolved = resolveRef.current ? await resolveRef.current(result.code) : null;
+          if (resolved) {
+            onFoundRef.current(resolved);
+            onCloseRef.current();
+            return;
+          }
+        } catch {
+          // The local list already missed, so show the not-found state.
+        }
         setNotFound(result.code);
         return;
       }

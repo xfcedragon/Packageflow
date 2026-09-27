@@ -1,7 +1,9 @@
 import { assignLocations } from "../src/loading";
+import { activeBackend } from "./_lib/backend";
 import { createHandler, HttpError } from "./_lib/http";
 import { listPackages } from "./_lib/packages";
 import { execute, qualifiedTable } from "./_lib/snowflake";
+import { listSupabasePackages, updateSupabaseLocations } from "./_lib/supabase-store";
 
 type Placement = {
   id: string;
@@ -14,7 +16,19 @@ const ZONES = new Set(["A", "B", "C", "D"]);
 const SHELVES = new Set(["lower", "middle", "upper"]);
 
 export default createHandler("POST", async (req) => {
+  const backend = activeBackend();
   const provided = providedPlacements(req.body);
+  if (backend === "supabase") {
+    if (provided) {
+      await updateSupabaseLocations(provided);
+      return { updated: provided.length, source: "request" };
+    }
+    const packages = await listSupabasePackages();
+    const placed = assignLocations(packages);
+    await updateSupabaseLocations(placed);
+    return { updated: placed.length, packages: placed };
+  }
+
   if (provided) {
     await mergePlacements(provided);
     return { updated: provided.length, source: "request" };

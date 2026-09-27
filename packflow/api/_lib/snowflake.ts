@@ -11,6 +11,16 @@ const REQUIRED_ENV = [
   "SNOWFLAKE_ROLE",
 ] as const;
 
+export function snowflakeEnvStatus(): { ready: boolean; present: string[]; missing: string[] } {
+  const present: string[] = [];
+  const missing: string[] = [];
+  for (const name of REQUIRED_ENV) {
+    if (process.env[name]?.trim()) present.push(name);
+    else missing.push(name);
+  }
+  return { ready: missing.length === 0, present, missing };
+}
+
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_$]*$/;
 
 export type SqlValue = string | number | boolean | null;

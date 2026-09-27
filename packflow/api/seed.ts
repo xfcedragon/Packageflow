@@ -1,13 +1,12 @@
 import { mockPackages } from "../src/mockPackages";
-import { createHandler, HttpError } from "./_lib/http";
+import { activeBackend } from "./_lib/backend";
+import { createHandler } from "./_lib/http";
+import { stopsFromMock, type StopSeed } from "./_lib/mock-seed";
 import { execute, qualifiedTable, type SqlValue } from "./_lib/snowflake";
-
-type StopSeed = {
-  stopNumber: number;
-  address: string;
-};
+import { seedSupabase } from "./_lib/supabase-store";
 
 export default createHandler("POST", async () => {
+  if (activeBackend() === "supabase") return seedSupabase();
   const stops = stopsFromMock();
   const before = await counts();
   if (before.packages === 0) await insertPackages();
@@ -21,23 +20,6 @@ export default createHandler("POST", async () => {
     stops: after.stops,
   };
 });
-
-function stopsFromMock(): StopSeed[] {
-  const byStop = new Map<number, string>();
-  for (const pkg of mockPackages) {
-    const existing = byStop.get(pkg.stopNumber);
-    if (existing === undefined) {
-      byStop.set(pkg.stopNumber, pkg.deliveryAddress);
-      continue;
-    }
-    if (existing !== pkg.deliveryAddress) {
-      throw new HttpError(500, `Stop ${pkg.stopNumber} has conflicting addresses in mock data`);
-    }
-  }
-  return [...byStop.entries()]
-    .sort((left, right) => left[0] - right[0])
-    .map(([stopNumber, address]) => ({ stopNumber, address }));
-}
 
 async function counts(): Promise<{ packages: number; stops: number }> {
   const rows = await execute(

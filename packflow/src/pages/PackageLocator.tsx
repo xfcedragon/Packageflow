@@ -14,11 +14,13 @@ import {
   matchesQuery,
   nextPending,
 } from "../delivery";
+import { getPackageByTrackingNumber } from "../lib/package-service";
 import { usePackages } from "../package-context";
 import type { Package } from "../types";
 
 export function PackageLocator() {
-  const { packages, markDelivered, selectedId, selectPackage, demoActive } = usePackages();
+  const { packages, markDelivered, selectedId, selectPackage, demoActive, dataMode, includePackage } =
+    usePackages();
   const [params, setParams] = useSearchParams();
   const [scanOpen, setScanOpen] = useState(false);
   const query = params.get("q") ?? "";
@@ -41,9 +43,36 @@ export function PackageLocator() {
     if (selectedFromSearch.id !== selectedId) selectPackage(selectedFromSearch.id);
   }, [query, selectedFromSearch, selectedId, selectPackage]);
 
+  useEffect(() => {
+    if (dataMode !== "supabase") return;
+    const text = query.trim();
+    if (!/^PF\d{12}$/.test(text)) return;
+    if (packages.some((pkg) => pkg.trackingNumber === text)) return;
+    let cancelled = false;
+    void getPackageByTrackingNumber(text)
+      .then((pkg) => {
+        if (!cancelled && pkg) includePackage(pkg);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [dataMode, includePackage, packages, query]);
+
   function updateQuery(value: string) {
     if (value) setParams({ q: value }, { replace: true });
     else setParams({}, { replace: true });
+  }
+
+  async function resolveMissing(code: string) {
+    if (dataMode !== "supabase") return null;
+    try {
+      const pkg = await getPackageByTrackingNumber(code);
+      if (pkg) includePackage(pkg);
+      return pkg;
+    } catch {
+      return null;
+    }
   }
 
   return (
@@ -84,8 +113,10 @@ export function PackageLocator() {
           <PackageScanner
             packages={packages}
             onClose={() => setScanOpen(false)}
+            resolveMissing={resolveMissing}
             onFound={(pkg) => {
               setScanOpen(false);
+              includePackage(pkg);
               if (query) setParams({}, { replace: true });
               selectPackage(pkg.id);
             }}

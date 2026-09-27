@@ -11,7 +11,8 @@ const links = [
 ];
 
 export function Sidebar() {
-  const { packages, demoActive, startDemo, exitDemo } = usePackages();
+  const { packages, demoActive, startDemo, exitDemo, dataMode, supabaseReady, sourceDetail, setDataMode } =
+    usePackages();
   const navigate = useNavigate();
   const remaining = packages.filter((pkg) => pkg.status !== "delivered").length;
 
@@ -63,6 +64,18 @@ export function Sidebar() {
       </div>
 
       <div className="demo-controls">
+        {supabaseReady ? (
+          <button
+            type="button"
+            className={dataMode === "supabase" ? "demo-btn is-on" : "demo-btn"}
+            onClick={() => setDataMode(dataMode === "supabase" ? "local" : "supabase")}
+          >
+            {dataMode === "supabase" ? "Supabase" : "Local demo"}
+          </button>
+        ) : (
+          <p className="data-note">Local demo</p>
+        )}
+        {sourceDetail ? <p className="data-note">{sourceDetail}</p> : null}
         <button
           type="button"
           className={demoActive ? "demo-btn is-on" : "demo-btn"}
